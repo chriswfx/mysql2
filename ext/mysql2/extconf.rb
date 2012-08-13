@@ -33,17 +33,14 @@ elsif mc = (with_config('mysql-config') || Dir[GLOB].first) then
   mc = Dir[GLOB].first if mc == true
   cflags = `#{mc} --cflags`.chomp
   exit 1 if $? != 0
-  libs = `#{mc} --libs_r`.chomp
-  if libs.empty?
-    libs = `#{mc} --libs`.chomp
-  end
+  libs = `#{mc} --libmysqld-libs`.chomp
   exit 1 if $? != 0
   $CPPFLAGS += ' ' + cflags
   $libs = libs + " " + $libs
 else
   inc, lib = dir_config('mysql', '/usr/local')
   libs = ['m', 'z', 'socket', 'nsl', 'mygcc']
-  while not find_library('mysqlclient', 'mysql_query', lib, "#{lib}/mysql") do
+  while not find_library('mysqld', 'mysql_query', lib, "#{lib}/mysql") do
     exit 1 if libs.empty?
     have_library(libs.shift)
   end
