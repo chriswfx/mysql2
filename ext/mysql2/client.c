@@ -535,7 +535,9 @@ static VALUE rb_mysql_client_query(int argc, VALUE * argv, VALUE self) {
     async_args.fd = wrapper->client->net.fd;
     async_args.self = self;
 
-    rb_rescue2(do_query, (VALUE)&async_args, disconnect_and_raise, self, rb_eException, (VALUE)0);
+//    With embedded server, this will not get the signal it is looking for until there is some other IO
+//    event, like the user hitting a key, causing things to hang and be weird
+//    rb_rescue2(do_query, (VALUE)&async_args, disconnect_and_raise, self, rb_eException, (VALUE)0);
 
     return rb_mysql_client_async_result(self);
   } else {
