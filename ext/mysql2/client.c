@@ -146,7 +146,7 @@ static VALUE nogvl_init(void *ptr) {
   mkdir("/tmp/amnesia.mysql_db", 0700);
   if (err = mysql_library_init(sizeof(server_args) / sizeof(char *),
                         server_args, server_groups)) {
-    fprintf(stderr, "could not initialize MySQL library\n");
+    fprintf(stderr, "Failed to initialize MySQL with error code: %d, error: %s", err, mysql_error(NULL));
     exit(err);
   }
 
