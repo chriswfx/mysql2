@@ -124,8 +124,30 @@ static VALUE rb_raise_mysql2_error(mysql_client_wrapper *wrapper) {
   return Qnil;
 }
 
+static char *server_args[] = {
+  "this_program",       /* this string is not used */
+  "--datadir=/tmp/amnesia.mysql_db", // TODO: Make this configurable somehow
+  // These are to prevent use of disk-based temporary tables, which are not fork-safe
+  "--tmp_table_size=4294967295",
+  "--max_heap_table_size=4294967295"
+};
+
+static char *server_groups[] = {
+  "embedded",
+  "server",
+  "amnesia",
+  (char *)NULL
+};
+
 static VALUE nogvl_init(void *ptr) {
   MYSQL *client;
+
+  mkdir("/tmp/amnesia.mysql_db", 0700);
+  if (mysql_library_init(sizeof(server_args) / sizeof(char *),
+                        server_args, server_groups)) {
+    fprintf(stderr, "could not initialize MySQL library\n");
+    exit(1);
+  }
 
   /* may initialize embedded server and read /etc/services off disk */
   client = mysql_init((MYSQL *)ptr);
