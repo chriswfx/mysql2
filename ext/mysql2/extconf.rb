@@ -34,6 +34,10 @@ elsif mc = (with_config('mysql-config') || Dir[GLOB].first) then
   cflags = `#{mc} --cflags`.chomp
   exit 1 if $? != 0
   libs = `#{mc} --libmysqld-libs`.chomp
+  path = libs.match(/-L([^ ]+) /)[1]
+  if `find #{path} -name 'libmysqld_pic*'`.strip.length > 0
+    libs.sub!('-lmysqld', '-lmysqld_pic')
+  end
   exit 1 if $? != 0
   $CPPFLAGS += ' ' + cflags
   $libs = libs + " " + $libs
@@ -61,7 +65,7 @@ end
 
 # GCC specific flags
 if RbConfig::MAKEFILE_CONFIG['CC'] =~ /gcc/
-  $CFLAGS << ' -Wall -funroll-loops -fpic'
+  $CFLAGS << ' -Wall -funroll-loops'
 
   if hard_mysql_path = $libs[%r{-L(/[^ ]+)}, 1]
     $LDFLAGS << " -Wl,-rpath,#{hard_mysql_path}"
