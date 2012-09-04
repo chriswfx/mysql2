@@ -141,12 +141,13 @@ static char *server_groups[] = {
 
 static VALUE nogvl_init(void *ptr) {
   MYSQL *client;
+  int err;
 
   mkdir("/tmp/amnesia.mysql_db", 0700);
-  if (mysql_library_init(sizeof(server_args) / sizeof(char *),
+  if (err = mysql_library_init(sizeof(server_args) / sizeof(char *),
                         server_args, server_groups)) {
     fprintf(stderr, "could not initialize MySQL library\n");
-    exit(1);
+    exit(err);
   }
 
   /* may initialize embedded server and read /etc/services off disk */
