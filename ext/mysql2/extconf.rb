@@ -34,11 +34,12 @@ elsif mc = (with_config('mysql-config') || Dir[GLOB].first) then
   cflags = `#{mc} --cflags`.chomp
   exit 1 if $? != 0
   libs = `#{mc} --libmysqld-libs`.chomp
-  path = libs.match(/-L([^ ]+) /)[1]
-  if `find #{path} -name 'libmysqld_pic*'`.strip.length > 0
-    libs.sub!('-lmysqld', '-lmysqld_pic')
-  end
   exit 1 if $? != 0
+  if File.exists?("/usr/lib/mysql/libmysqld_pic.a")
+    # On retarded Ubuntu installation that probably lies about lib path
+    libs.sub!('-lmysqld', '-lmysqld_pic')
+    libs += ' -L/usr/lib/mysql'
+  end
   $CPPFLAGS += ' ' + cflags
   $libs = libs + " " + $libs
 else
