@@ -1,7 +1,7 @@
 require File.expand_path('../lib/mysql2/version', __FILE__)
 
 Gem::Specification.new do |s|
-  s.name = %q{mysql2}
+  s.name = %q{mysql2-amnesia}
   s.version = Mysql2::VERSION
   s.authors = ["Brian Lopez"]
   s.date = Time.now.utc.strftime("%Y-%m-%d")
