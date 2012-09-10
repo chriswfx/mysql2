@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mysql2 (0.2.19b1)
+    mysql2-amnesia (0.2.19b1)
 
 GEM
   remote: http://rubygems.org/
@@ -54,7 +54,7 @@ DEPENDENCIES
   eventmachine
   faker
   mysql
-  mysql2!
+  mysql2-amnesia!
   rake (= 0.8.7)
   rake-compiler (~> 0.7.7)
   rspec
