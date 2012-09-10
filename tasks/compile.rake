@@ -4,7 +4,7 @@ CONNECTOR_VERSION = "6.0.2" #"mysql-connector-c-noinstall-6.0.2-win32.zip"
 CONNECTOR_MIRROR = ENV['CONNECTOR_MIRROR'] || ENV['MYSQL_MIRROR'] || "http://mysql.he.net/"
 
 def gemspec
-  @clean_gemspec ||= eval(File.read(File.expand_path('../../mysql2.gemspec', __FILE__)))
+  @clean_gemspec ||= eval(File.read(File.expand_path('../../mysql2-amnesia.gemspec', __FILE__)))
 end
 
 Rake::ExtensionTask.new("mysql2", gemspec) do |ext|
