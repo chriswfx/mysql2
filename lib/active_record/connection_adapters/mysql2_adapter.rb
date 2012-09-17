@@ -116,6 +116,11 @@ module ActiveRecord
         :boolean     => { :name => "tinyint", :limit => 1 }
       }
 
+      # We can only have one client in the process when using embedded server
+      def self.new(*args)
+        @global_mysql2_adapter ||= super
+      end
+
       def initialize(connection, logger, connection_options, config)
         super(connection, logger)
         @connection_options, @config = connection_options, config
@@ -259,10 +264,19 @@ module ActiveRecord
         # make sure we carry over any changes to ActiveRecord::Base.default_timezone that have been
         # made since we established the connection
         @connection.query_options[:database_timezone] = ActiveRecord::Base.default_timezone
-        if name == :skip_logging
-          @connection.query(sql)
-        else
-          log(sql, name) { @connection.query(sql) }
+        Thread.exclusive do
+          @seen_threads ||= {}
+          unless @seen_threads[Thread.current]
+            @seen_threads[Thread.current] = true
+            new_thread = true
+          end
+          #puts "#{@connection.inspect} #{Process.pid} #{Thread.current.inspect} #{new_thread.inspect}"
+          @connection.init_thread if new_thread
+          if name == :skip_logging
+            @connection.query(sql)
+          else
+            log(sql, name) { @connection.query(sql) }
+          end
         end
       rescue ActiveRecord::StatementInvalid => exception
         if exception.message.split(":").first =~ /Packets out of order/

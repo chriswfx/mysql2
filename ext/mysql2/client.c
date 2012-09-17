@@ -288,6 +288,12 @@ static VALUE rb_mysql_client_close(VALUE self) {
   return Qnil;
 }
 
+static VALUE rb_mysql_client_init_thread(VALUE self) {
+  mysql_thread_init();
+
+  return Qnil;
+}
+
 /*
  * mysql_send_query is unlikely to block since most queries are small
  * enough to fit in a socket buffer, but sometimes large UPDATE and
@@ -834,6 +840,7 @@ static VALUE rb_mysql_client_select_db(VALUE self, VALUE db)
 static VALUE nogvl_ping(void *ptr) {
   MYSQL *client = ptr;
 
+  return Qtrue; // No actual reason to ping while embedded, and then we don't need to synchronize it
   return mysql_ping(client) == 0 ? Qtrue : Qfalse;
 }
 
@@ -1035,6 +1042,7 @@ void init_mysql2_client() {
   rb_define_singleton_method(cMysql2Client, "escape", rb_mysql_client_escape, 1);
 
   rb_define_method(cMysql2Client, "close", rb_mysql_client_close, 0);
+  rb_define_method(cMysql2Client, "init_thread", rb_mysql_client_init_thread, 0);
   rb_define_method(cMysql2Client, "query", rb_mysql_client_query, -1);
   rb_define_method(cMysql2Client, "escape", rb_mysql_client_real_escape, 1);
   rb_define_method(cMysql2Client, "info", rb_mysql_client_info, 0);
