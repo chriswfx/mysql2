@@ -127,9 +127,11 @@ static VALUE rb_raise_mysql2_error(mysql_client_wrapper *wrapper) {
 static char *server_args[] = {
   "this_program",       /* this string is not used */
   "--datadir=./tmp/amnesia.mysql_db", // TODO: Make this configurable somehow
-  // These are to prevent use of disk-based temporary tables, which are not fork-safe
+  // These are to reduce use of disk-based temporary tables, which are not fork-safe
   "--tmp_table_size=4294967295",
-  "--max_heap_table_size=4294967295"
+  "--max_heap_table_size=4294967295",
+  // This reduces filename collision between forks when temp tables are used despite our best efforts
+  "--temp-pool=FALSE"
 };
 
 static char *server_groups[] = {
