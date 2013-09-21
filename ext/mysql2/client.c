@@ -143,8 +143,33 @@ static VALUE rb_raise_mysql2_error(mysql_client_wrapper *wrapper) {
   return Qnil;
 }
 
+static char *server_args[] = {
+  "this_program",       /* this string is not used */
+  "--datadir=./tmp/amnesia.mysql_db", // TODO: Make this configurable somehow
+  // These are to reduce use of disk-based temporary tables, which are not fork-safe
+  "--tmp_table_size=4294967295",
+  "--max_heap_table_size=4294967295",
+  // This reduces filename collision between forks when temp tables are used despite our best efforts
+  "--temp-pool=FALSE"
+};
+
+static char *server_groups[] = {
+  "embedded",
+  "server",
+  "amnesia",
+  (char *)NULL
+};
+
 static VALUE nogvl_init(void *ptr) {
   MYSQL *client;
+  int err;
+
+  mkdir("./tmp/amnesia.mysql_db", 0700);
+  if (err = mysql_library_init(sizeof(server_args) / sizeof(char *),
+                        server_args, server_groups)) {
+    fprintf(stderr, "Failed to initialize MySQL with error code: %d, error: %s", err, mysql_error(NULL));
+    exit(err);
+  }
 
   /* may initialize embedded server and read /etc/services off disk */
   client = mysql_init((MYSQL *)ptr);
@@ -318,6 +343,12 @@ static VALUE rb_mysql_client_close(VALUE self) {
   if (wrapper->connected) {
     rb_thread_blocking_region(nogvl_close, wrapper, RUBY_UBF_IO, 0);
   }
+
+  return Qnil;
+}
+
+static VALUE rb_mysql_client_init_thread(VALUE self) {
+  mysql_thread_init();
 
   return Qnil;
 }
@@ -618,7 +649,9 @@ static VALUE rb_mysql_client_query(int argc, VALUE * argv, VALUE self) {
     async_args.fd = wrapper->client->net.fd;
     async_args.self = self;
 
-    rb_rescue2(do_query, (VALUE)&async_args, disconnect_and_raise, self, rb_eException, (VALUE)0);
+//    With embedded server, this will not get the signal it is looking for until there is some other IO
+//    event, like the user hitting a key, causing things to hang and be weird
+//    rb_rescue2(do_query, (VALUE)&async_args, disconnect_and_raise, self, rb_eException, (VALUE)0);
 
     return rb_mysql_client_async_result(self);
   } else {
@@ -891,6 +924,7 @@ static VALUE rb_mysql_client_select_db(VALUE self, VALUE db)
 static VALUE nogvl_ping(void *ptr) {
   MYSQL *client = ptr;
 
+  return Qtrue; // No actual reason to ping while embedded, and then we don't need to synchronize it
   return mysql_ping(client) == 0 ? Qtrue : Qfalse;
 }
 
@@ -1126,6 +1160,7 @@ void init_mysql2_client() {
   rb_define_singleton_method(cMysql2Client, "escape", rb_mysql_client_escape, 1);
 
   rb_define_method(cMysql2Client, "close", rb_mysql_client_close, 0);
+  rb_define_method(cMysql2Client, "init_thread", rb_mysql_client_init_thread, 0);
   rb_define_method(cMysql2Client, "query", rb_mysql_client_query, -1);
   rb_define_method(cMysql2Client, "abandon_results!", rb_mysql_client_abandon_results, 0);
   rb_define_method(cMysql2Client, "escape", rb_mysql_client_real_escape, 1);

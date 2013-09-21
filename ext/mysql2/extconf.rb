@@ -44,18 +44,19 @@ elsif mc = (with_config('mysql-config') || Dir[GLOB].first) then
   ver = `#{mc} --version`.chomp.to_f
   cflags = `#{mc} --cflags`.chomp
   exit 1 if $? != 0
-  libs = `#{mc} --libs_r`.chomp
-  # MySQL 5.5 and above already have re-entrant code in libmysqlclient (no _r).
-  if ver >= 5.5 || libs.empty?
-    libs = `#{mc} --libs`.chomp
-  end
+  libs = `#{mc} --libmysqld-libs`.chomp
   exit 1 if $? != 0
+  if File.exists?("/usr/lib/mysql/libmysqld_pic.a")
+    # On retarded Ubuntu installation that probably lies about lib path
+    libs.sub!('-lmysqld', '-lmysqld_pic')
+    libs += ' -L/usr/lib/mysql'
+  end
   $CPPFLAGS += ' ' + cflags
   $libs = libs + " " + $libs
 else
   inc, lib = dir_config('mysql', '/usr/local')
   libs = ['m', 'z', 'socket', 'nsl', 'mygcc']
-  while not find_library('mysqlclient', 'mysql_query', lib, "#{lib}/mysql") do
+  while not find_library('mysqld', 'mysql_query', lib, "#{lib}/mysql") do
     exit 1 if libs.empty?
     have_library(libs.shift)
   end
